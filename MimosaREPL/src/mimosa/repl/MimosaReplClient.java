@@ -6,6 +6,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,13 +24,19 @@ public class MimosaReplClient implements Runnable {
 
   private Socket server = null;
 
-  private String message = null;
+  private List<String> messages = null;
 
   private boolean stopped = false;
+
+  private Map<String, List<ResultHandler>> handlers = null;
 
   public MimosaReplClient(String host, int port) {
     this.host = host;
     this.port = port;
+
+    messages = Collections.synchronizedList(new ArrayList<String>());
+    
+    handlers = new HashMap<String, List<ResultHandler>>();
   }
 
   public Socket connect() {
@@ -41,8 +52,18 @@ public class MimosaReplClient implements Runnable {
     return server;
   }
 
+  public void addHandler(String code, ResultHandler handler) {
+    List<ResultHandler> handlerList = handlers.get(code);
+    if (handlerList == null) {
+      handlerList = new ArrayList<ResultHandler>();
+      handlers.put(code, handlerList);
+    }
+
+    handlerList.add(handler);
+  }
+
   public synchronized void send(String msg) {
-    message = msg;
+    messages.add(msg);
   }
 
   public void run() {
@@ -58,26 +79,34 @@ public class MimosaReplClient implements Runnable {
       PrintWriter out = new PrintWriter(server.getOutputStream());
 
       while (!stopped) {
-        while (message == null) {
+        while (messages.size() == 0) {
           try {
             Thread.sleep(100);
           } catch (InterruptedException e) {
             e.printStackTrace();
           }
         }
+        
+        String message = messages.get(0);
 
+        String cmdCode = CommandFactory.getCommandCode(message);
         synchronized (out) {
           message = message.replace('\n', REPLACE);
           out.println(message);
           out.flush();
-          Log.log(Level.INFO, "send message: " + message);
-          message = null;
+          // Log.log(Level.INFO, "send: " + message);
+          messages.remove(0);
         }
 
         String line = null;
         if (!stopped && (line = in.readLine()) != null) {
           final String s = line.replace(REPLACE, '\n');
-          Log.log(Level.INFO, "return value: " + s);
+          List<ResultHandler> handlerList = handlers.get(cmdCode);
+          if (handlerList != null) {
+            for (ResultHandler handler : handlerList) {
+              handler.handle(s);
+            }
+          }
         }
       }
 

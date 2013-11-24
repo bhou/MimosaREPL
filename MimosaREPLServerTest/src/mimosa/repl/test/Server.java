@@ -7,9 +7,9 @@ import mimosa.repl.MimosaReplServer;
 public class Server {
 
   public static void main(String[] args) {
-    LuaService service = new LuaService();
-    CommandFactory.setLuaService(service);
-    Thread thread = new Thread(new MimosaReplServer());
+    LuaService service = new LuaService();  // create a lua service
+    CommandFactory.setLuaService(service);  // set the lua service to command factory
+    Thread thread = new Thread(new MimosaReplServer()); // start mimosa repl server
     thread.start();
   }
 }

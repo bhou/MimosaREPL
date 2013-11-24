@@ -5,8 +5,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.keplerproject.luajava.LuaState;
-
 public class CommandFactory {
   private static Map<String, Class<? extends Command>> commandMap = new HashMap<String, Class<? extends Command>>();
   private static LuaService luaService = null;
@@ -33,8 +31,11 @@ public class CommandFactory {
     Class<? extends Command> cmdClass = commandMap.get(code);
 
     try {
-      Constructor<? extends Command> constructor = cmdClass.getConstructor(LuaService.class, String.class);
-      Command cmd = constructor.newInstance(CommandFactory.luaService, command);
+      Constructor<? extends Command> constructor = cmdClass.getConstructor(LuaService.class);
+      Command cmd = constructor.newInstance(CommandFactory.luaService);
+      if (cmd instanceof LuaCommand){
+        ((LuaCommand)cmd).setCommand(command);
+      }
       return cmd;
     } catch (NoSuchMethodException e) {
       e.printStackTrace();

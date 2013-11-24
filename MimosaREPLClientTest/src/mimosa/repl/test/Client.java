@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import mimosa.repl.MimosaReplClient;
+import mimosa.repl.ResultHandler;
 
 public class Client {
-
+  private final static Logger Log = Logger.getLogger(Client.class.getName());
   public static void main(String[] args) {
     FileInputStream fis;
     try {
@@ -28,10 +30,14 @@ public class Client {
     }
 
     MimosaReplClient client = new MimosaReplClient("localhost", 3333);
+    client.addHandler("--run:", new ResultHandler() {      
+      @Override
+      public void handle(String message) {
+        Log.log(Level.INFO, message);
+      }
+    });
     Thread thread = new Thread(client);
     thread.start();
-
-    // client.send("--run:\n print 'hello world' ");
 
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     String line;

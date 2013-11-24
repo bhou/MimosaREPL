@@ -283,15 +283,10 @@ public class LuaService {
       printToString = false;
       if (ok == 0) {
         String res = output.toString();
-        int len = output.length();
         output.setLength(0);
         return res;
       }
     }
     throw new LuaException("Error code: " + ok + ": " + L.toString(-1));
-  }
-
-  private String getFilesDir() {
-    return LuaService.class.getProtectionDomain().getCodeSource().getLocation().getPath();
   }
 }
