@@ -15,20 +15,19 @@ thread.start();
 
 ####Client side
 `````java
-MimosaReplClient client = new MimosaReplClient("localhost", 3333);  // connect to server
-// handle return value 
-client.setHandler(RunCommand.class, new RunCmdHandler())
-client.setHandler(ModuleCommand.class, new ModuleCmdHandler())
-
-Thread thread = new Thread(client); // start a thread to handle network stuff
+MimosaReplClient client = new MimosaReplClient("localhost", 3333);
+client.addHandler("--run:", new ResultHandler() {      
+  @Override
+  public void handle(String message) {
+    System.out.println(message);
+  }
+});
+Thread thread = new Thread(client);
 thread.start();
 
-// command type is defined as first line comment
-client.send("--run:\n" + line); // directly send code as string
-client.send("--module:\n" + chunkStr);  // send a module file
+String line = "print('hello')";
+client.send("--run:\n" + line);
 
-client.send(RunCommand.create(line)); 
-client.send(ModuleCommand.create(moduleName));
 `````
 
 The basic command is RunCommand: it sends any lua code to server, run it, and send the result back. You should create 
